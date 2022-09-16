@@ -3,20 +3,38 @@ const morgan = require("morgan");
 const postBank = require("./postBank");
 const postList = require("./views/postList");
 const postDetails = require("./views/postDetails");
+const client = require("./db/index");
 
 const app = express();
 
-app.use(morgan('dev'));
+app.use(morgan("dev"));
 app.use(express.static(__dirname + "/public"));
 
-app.get("/", (req, res) => {
-  const posts = postBank.list();
-  res.send(postList(posts));
+app.get("/", async (req, res, next) => {
+  // const posts = postBank.list();
+  // res.send(postList(posts));
+  try {
+    const data = await client.query("SELECT * FROM posts");
+    const posts = data.rows;
+    res.send(postList(posts));
+  } catch (error) {
+    next(error);
+  }
 });
 
-app.get("/posts/:id", (req, res) => {
-  const post = postBank.find(req.params.id);
+app.get("/posts/:id", async (req, res) => {
+  const data = await client.query(
+    `SELECT * FROM posts WHERE ID =${req.params.id}`
+  );
+  const [post] = data.rows;
   res.send(postDetails(post));
+  console.log(post);
+  // const data = await client.query("SELECT * FROM posts");
+  // console.log("REG PARAMS ID ---->", req.params.id);
+  // console.log("here the data", data.rows);
+  // const post = data.rows.find((post) => post.id === req.params.id);
+  // console.log("Single post", post);
+  // res.send(postDetails(post));
 });
 
 const PORT = 1337;
